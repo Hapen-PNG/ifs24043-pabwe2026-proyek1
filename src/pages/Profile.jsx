@@ -1,6 +1,15 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext.jsx'
+import Swal from 'sweetalert2'
+import {
+  changePassword as changePasswordAction,
+  logout as logoutAction,
+} from '../features/auth/states/action.js'
+import {
+  updateCurrentUser,
+  updateCurrentUserPhoto,
+} from '../features/users/states/action.js'
 import { useLibrary } from '../context/LibraryContext.jsx'
 import { usePlayer } from '../context/PlayerContext.jsx'
 import { useTheme } from '../context/ThemeContext.jsx'
@@ -26,21 +35,31 @@ function formatDate(value) {
   }).format(date)
 }
 
+function getPhotoUrl(photo) {
+  if (!photo) return null
+  if (/^https?:\/\//i.test(photo)) return photo
+
+  try {
+    const apiBase = new URL(import.meta.env.VITE_DELCOM_BASEURL)
+    return new URL(photo.replace(/^\/+/, ''), apiBase.origin).href
+  } catch (error) {
+    console.error('URL foto profil dari API tidak valid.', error)
+    return photo
+  }
+}
+
 function Profile() {
-  const {
-    user,
-    updateProfile,
-    changePassword,
-    logout,
-    deleteAccount,
-  } = useAuth()
+  const dispatch = useDispatch()
+  const user = useSelector((state) => state.users.user)
+  const userStatus = useSelector((state) => state.users.status)
+  const userError = useSelector((state) => state.users.error)
   const { favoriteSongs, playlists } = useLibrary()
   const { songs, volume, setVolume, totalPlayCount, topPlayedSongs, playCounts } =
     usePlayer()
   const { theme, toggleTheme } = useTheme()
   const navigate = useNavigate()
   const [name, setName] = useState(user?.name ?? '')
-  const [bio, setBio] = useState(user?.bio ?? '')
+  const [email, setEmail] = useState(user?.email ?? '')
   const [oldPassword, setOldPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -49,18 +68,48 @@ function Profile() {
   const [savingProfile, setSavingProfile] = useState(false)
   const [savingPassword, setSavingPassword] = useState(false)
 
-  const handleProfileSubmit = (event) => {
+  useEffect(() => {
+    setName(user?.name ?? '')
+    setEmail(user?.email ?? '')
+  }, [user?.email, user?.name])
+
+  const showError = async (title, cause) => {
+    const message = typeof cause === 'string'
+      ? cause
+      : cause?.message ?? 'Permintaan gagal. Silakan coba lagi.'
+    setError(message)
+    await Swal.fire({ icon: 'error', title, text: message })
+  }
+
+  const handleProfileSubmit = async (event) => {
     event.preventDefault()
     setError('')
     setMessage('')
     setSavingProfile(true)
     try {
-      updateProfile(name, bio)
+      await dispatch(updateCurrentUser({ name, email })).unwrap()
       setMessage('Profil berhasil diperbarui.')
+      await Swal.fire({ icon: 'success', title: 'Profil berhasil diperbarui' })
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Profil gagal diperbarui.')
+      await showError('Profil gagal diperbarui', cause)
     } finally {
       setSavingProfile(false)
+    }
+  }
+
+  const handlePhotoChange = async (event) => {
+    const photo = event.target.files?.[0]
+    if (!photo) return
+    setError('')
+    setMessage('')
+    try {
+      await dispatch(updateCurrentUserPhoto(photo)).unwrap()
+      setMessage('Foto profil berhasil diperbarui.')
+      await Swal.fire({ icon: 'success', title: 'Foto profil berhasil diperbarui' })
+    } catch (cause) {
+      await showError('Foto profil gagal diperbarui', cause)
+    } finally {
+      event.target.value = ''
     }
   }
 
@@ -70,22 +119,28 @@ function Profile() {
     setMessage('')
     setSavingPassword(true)
     try {
-      await changePassword(oldPassword, newPassword, confirmPassword)
+      await dispatch(changePasswordAction({
+        password: oldPassword,
+        newPassword,
+        newPasswordConfirmation: confirmPassword,
+      })).unwrap()
       setOldPassword('')
       setNewPassword('')
       setConfirmPassword('')
       setMessage('Kata sandi berhasil diganti.')
+      await Swal.fire({ icon: 'success', title: 'Kata sandi berhasil diganti' })
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Kata sandi gagal diganti.')
+      await showError('Kata sandi gagal diganti', cause)
     } finally {
       setSavingPassword(false)
     }
   }
 
   const clearSearchHistory = () => {
+    if (user?.id === undefined || user?.id === null) return
     try {
       window.localStorage.removeItem(
-        `mini-music-player:search-history:${user?.id ?? user?.email ?? 'anonymous'}`,
+        `mini-music-player:search-history:${user.id}`,
       )
       setMessage('Riwayat pencarian berhasil dihapus.')
       setError('')
@@ -96,25 +151,19 @@ function Profile() {
     }
   }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     try {
-      logout()
-      navigate('/login', { replace: true })
+      await dispatch(logoutAction()).unwrap()
+      await Swal.fire({
+        icon: 'success',
+        title: 'Berhasil keluar',
+        timer: 1200,
+        showConfirmButton: false,
+      })
+      navigate('/auth/login', { replace: true })
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Gagal keluar dari akun.')
-    }
-  }
-
-  const handleDeleteAccount = () => {
-    const confirmed = window.confirm(
-      'Hapus akun dan seluruh data lokal akun ini? Tindakan ini tidak dapat dibatalkan.',
-    )
-    if (!confirmed) return
-    try {
-      deleteAccount()
-      navigate('/register', { replace: true })
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Akun gagal dihapus.')
+      await showError('Sesi diakhiri', cause)
+      navigate('/auth/login', { replace: true })
     }
   }
 
@@ -137,6 +186,11 @@ function Profile() {
           {error}
         </p>
       )}
+      {userError && !error && (
+        <p role="alert" aria-live="polite" className="rounded-xl bg-rose-500/10 p-3 text-sm text-rose-300">
+          {userError}
+        </p>
+      )}
       {message && (
         <p role="status" aria-live="polite" className="rounded-xl bg-emerald-500/10 p-3 text-sm text-emerald-300">
           {message}
@@ -144,17 +198,24 @@ function Profile() {
       )}
 
       <section className="flex flex-wrap items-center gap-5 rounded-2xl border border-slate-800 bg-slate-900 p-6">
-        <div
-          aria-label={`Avatar ${getInitials(user?.name)}`}
-          className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 via-fuchsia-500 to-cyan-400 text-2xl font-bold text-white shadow-lg shadow-violet-950/40"
-        >
-          {getInitials(user?.name)}
-        </div>
+        {user?.photo ? (
+          <img
+            src={getPhotoUrl(user.photo)}
+            alt={`Foto profil ${user.name}`}
+            className="h-20 w-20 rounded-full object-cover"
+          />
+        ) : (
+          <div
+            aria-label={`Avatar ${getInitials(user?.name)}`}
+            className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 via-fuchsia-500 to-cyan-400 text-2xl font-bold text-white shadow-lg shadow-violet-950/40"
+          >
+            {getInitials(user?.name)}
+          </div>
+        )}
         <div className="min-w-0 flex-1">
           <h2 className="truncate text-2xl font-bold text-white">{user?.name}</h2>
           <p className="mt-1 truncate text-slate-400">{user?.email}</p>
-          <p className="mt-2 text-sm text-slate-500">Bergabung {formatDate(user?.joinedAt)}</p>
-          {user?.bio && <p className="mt-3 max-w-2xl text-sm text-slate-300">{user.bio}</p>}
+          <p className="mt-2 text-sm text-slate-500">Bergabung {formatDate(user?.created_at)}</p>
         </div>
       </section>
 
@@ -206,26 +267,39 @@ function Profile() {
             />
           </div>
           <div>
-            <label htmlFor="profile-bio" className="block text-sm font-medium text-slate-300">Bio singkat</label>
-            <textarea
-              id="profile-bio"
-              value={bio}
-              onChange={(event) => setBio(event.target.value)}
-              maxLength={160}
-              rows={3}
-              placeholder="Ceritakan sedikit tentang diri Anda"
-              className="mt-2 w-full resize-y rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white placeholder:text-slate-500 focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-400/40"
+            <label htmlFor="profile-email" className="block text-sm font-medium text-slate-300">Email</label>
+            <input
+              id="profile-email"
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              required
+              autoComplete="email"
+              className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-400/40"
             />
-            <p className="mt-1 text-right text-xs text-slate-500">{bio.length}/160</p>
           </div>
           <button
             type="submit"
-            disabled={savingProfile}
+            disabled={savingProfile || userStatus === 'loading'}
             className="rounded-xl bg-violet-400 px-5 py-3 font-semibold text-slate-950 transition-colors hover:bg-violet-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:opacity-60"
           >
-            {savingProfile ? 'Menyimpan...' : 'Simpan profil'}
+            {savingProfile || userStatus === 'loading' ? 'Menyimpan...' : 'Simpan profil'}
           </button>
         </form>
+        <div className="mt-5">
+          <label htmlFor="profile-photo" className="block text-sm font-medium text-slate-300">
+            Foto profil
+          </label>
+          <input
+            id="profile-photo"
+            type="file"
+            accept="image/*"
+            onChange={handlePhotoChange}
+            disabled={userStatus === 'loading'}
+            className="mt-2 block w-full text-sm text-slate-300 file:mr-4 file:rounded-lg file:border-0 file:bg-violet-400 file:px-4 file:py-2 file:font-semibold file:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 disabled:opacity-60"
+          />
+          <p className="mt-2 text-xs text-slate-500">Foto akan diunggah ke API Delcom.</p>
+        </div>
       </section>
 
       <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
@@ -336,7 +410,9 @@ function Profile() {
       <section className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-rose-900/50 bg-slate-900 p-6">
         <div>
           <h2 className="font-semibold text-white">Zona akun</h2>
-          <p className="mt-1 text-sm text-slate-400">Keluar atau hapus akun dan data lokalnya.</p>
+          <p className="mt-1 text-sm text-slate-400">
+            Penghapusan akun belum tersedia di dokumentasi API Delcom.
+          </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <button
@@ -346,18 +422,11 @@ function Profile() {
           >
             Keluar
           </button>
-          <button
-            type="button"
-            onClick={handleDeleteAccount}
-            className="rounded-xl bg-rose-500/15 px-4 py-2 text-sm font-semibold text-rose-300 transition-colors hover:bg-rose-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
-          >
-            Hapus akun
-          </button>
         </div>
       </section>
 
       <p className="pb-4 text-xs text-slate-500">
-        Akun menggunakan autentikasi simulasi di browser dan bukan layanan backend.
+        Profil dan autentikasi dikelola melalui API Delcom. Bio dan penghapusan akun tidak ditampilkan karena endpoint-nya tidak dijelaskan dalam dokumentasi.
       </p>
     </div>
   )

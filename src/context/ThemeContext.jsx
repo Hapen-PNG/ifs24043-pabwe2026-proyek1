@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import { useAuth } from './AuthContext.jsx'
+import { useSelector } from 'react-redux'
 
 const ThemeContext = createContext(null)
 
@@ -19,7 +19,7 @@ function getSavedTheme(key) {
 }
 
 export function ThemeProvider({ children }) {
-  const { user } = useAuth()
+  const user = useSelector((state) => state.users.user)
   const themeKey = getThemeKey(user)
   const [themeState, setThemeState] = useState(() => ({
     key: themeKey,

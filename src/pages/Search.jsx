@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useAuth } from '../context/AuthContext.jsx'
+import { useSelector } from 'react-redux'
 import { useLibrary } from '../context/LibraryContext.jsx'
 import { usePlayer } from '../context/PlayerContext.jsx'
 import useSearchHistory from '../hooks/useSearchHistory.js'
@@ -41,7 +41,7 @@ function HighlightText({ text, query }) {
 }
 
 function Search() {
-  const { user } = useAuth()
+  const user = useSelector((state) => state.users.user)
   const { songs, selectSong, enqueue } = usePlayer()
   const { favoriteIds, toggleFavorite } = useLibrary()
   const inputRef = useRef(null)

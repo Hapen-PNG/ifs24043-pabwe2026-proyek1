@@ -1,11 +1,11 @@
 import { useRef, useState } from 'react'
+import { useSelector } from 'react-redux'
 import LirikMini from '../components/LirikMini.jsx'
 import PlaybackOptions from '../components/PlaybackOptions.jsx'
 import Player from '../components/Player.jsx'
 import Playlist from '../components/Playlist.jsx'
 import QueuePanel from '../components/QueuePanel.jsx'
 import RecentlyPlayed from '../components/RecentlyPlayed.jsx'
-import { useAuth } from '../context/AuthContext.jsx'
 import { useLibrary } from '../context/LibraryContext.jsx'
 import { usePlayer } from '../context/PlayerContext.jsx'
 import useLibraryFeatures from '../hooks/useLibraryFeatures.js'
@@ -20,7 +20,7 @@ function getGreeting() {
 }
 
 function Home() {
-  const { user } = useAuth()
+  const user = useSelector((state) => state.users.user)
   const { addSong, pause, enqueue, queue } = usePlayer()
   const fileInputRef = useRef(null)
   const [uploadError, setUploadError] = useState('')

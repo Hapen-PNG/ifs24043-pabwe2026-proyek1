@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext.jsx'
+import Swal from 'sweetalert2'
+import { logout } from '../features/auth/states/action.js'
 import { usePlayer } from '../context/PlayerContext.jsx'
 import { useTheme } from '../context/ThemeContext.jsx'
 import MiniPlayer from './MiniPlayer.jsx'
@@ -13,7 +15,8 @@ const links = [
 ]
 
 function Layout() {
-  const { user, logout } = useAuth()
+  const dispatch = useDispatch()
+  const user = useSelector((state) => state.users.user)
   const { toggle, seek, currentTime, volume, setVolume } = usePlayer()
   const { theme, toggleTheme } = useTheme()
   const location = useLocation()
@@ -61,12 +64,23 @@ function Layout() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [seek, setVolume, toggle])
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     try {
-      logout()
-      navigate('/login', { replace: true })
+      await dispatch(logout()).unwrap()
+      await Swal.fire({
+        icon: 'success',
+        title: 'Berhasil keluar',
+        timer: 1200,
+        showConfirmButton: false,
+      })
+      navigate('/auth/login', { replace: true })
     } catch (error) {
-      console.error('Logout gagal.', error)
+      await Swal.fire({
+        icon: 'error',
+        title: 'Sesi diakhiri',
+        text: error?.message ?? 'Token lokal dihapus, tetapi API gagal mengonfirmasi logout.',
+      })
+      navigate('/auth/login', { replace: true })
     }
   }
 

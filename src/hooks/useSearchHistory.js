@@ -14,19 +14,26 @@ function readHistory(key) {
 }
 
 function useSearchHistory(userId) {
-  const storageKey = `mini-music-player:search-history:${userId ?? 'anonymous'}`
+  const storageKey = userId === undefined || userId === null
+    ? null
+    : `mini-music-player:search-history:${userId}`
   const [historyState, setHistoryState] = useState(() => ({
     key: storageKey,
-    items: readHistory(storageKey),
+    items: storageKey ? readHistory(storageKey) : [],
   }))
-  const history = historyState.key === storageKey ? historyState.items : []
+  const history = storageKey && historyState.key === storageKey
+    ? historyState.items
+    : []
 
   useEffect(() => {
-    setHistoryState({ key: storageKey, items: readHistory(storageKey) })
+    setHistoryState({
+      key: storageKey,
+      items: storageKey ? readHistory(storageKey) : [],
+    })
   }, [storageKey])
 
   useEffect(() => {
-    if (historyState.key !== storageKey) return
+    if (!storageKey || historyState.key !== storageKey) return
     try {
       window.localStorage.setItem(storageKey, JSON.stringify(historyState.items))
     } catch (error) {
@@ -35,6 +42,7 @@ function useSearchHistory(userId) {
   }, [historyState, storageKey])
 
   const addSearch = useCallback((value) => {
+    if (!storageKey) return
     const search = value.trim()
     if (!search) return
     setHistoryState((current) => {
@@ -45,6 +53,7 @@ function useSearchHistory(userId) {
   }, [storageKey])
 
   const removeSearch = useCallback((value) => {
+    if (!storageKey) return
     setHistoryState((current) => ({
       key: storageKey,
       items: (current.key === storageKey ? current.items : readHistory(storageKey))
@@ -53,6 +62,7 @@ function useSearchHistory(userId) {
   }, [storageKey])
 
   const clearHistory = useCallback(() => {
+    if (!storageKey) return
     setHistoryState({ key: storageKey, items: [] })
   }, [storageKey])
 

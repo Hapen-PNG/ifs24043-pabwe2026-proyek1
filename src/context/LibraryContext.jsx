@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
-import { useAuth } from './AuthContext.jsx'
+import { useSelector } from 'react-redux'
 import { usePlayer } from './PlayerContext.jsx'
 
 const LibraryContext = createContext(null)
@@ -16,20 +16,22 @@ function readArray(key) {
 }
 
 function getUserKey(user) {
-  return user?.id ?? user?.email ?? 'anonymous'
+  return user?.id === undefined || user?.id === null
+    ? null
+    : String(user.id)
 }
 
 function initialLibrary(user) {
   const key = getUserKey(user)
   return {
     owner: key,
-    favoriteIds: readArray(`mini-music-player:favorites:${key}`),
-    playlists: readArray(`mini-music-player:playlists:${key}`),
+    favoriteIds: key ? readArray(`mini-music-player:favorites:${key}`) : [],
+    playlists: key ? readArray(`mini-music-player:playlists:${key}`) : [],
   }
 }
 
 export function LibraryProvider({ children }) {
-  const { user } = useAuth()
+  const user = useSelector((state) => state.users.user)
   const { songs } = usePlayer()
   const userKey = getUserKey(user)
   const [library, setLibrary] = useState(() => initialLibrary(user))
@@ -41,7 +43,7 @@ export function LibraryProvider({ children }) {
   }, [library.owner, user, userKey])
 
   useEffect(() => {
-    if (library.owner !== userKey) return
+    if (!userKey || library.owner !== userKey) return
     try {
       window.localStorage.setItem(
         `mini-music-player:favorites:${userKey}`,

@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useState } from 'react'
-import { useAuth } from './AuthContext.jsx'
+import { useSelector } from 'react-redux'
 import useAnalyser from '../hooks/useAnalyser.js'
 import useAudioPlayer from '../hooks/useAudioPlayer.js'
 import usePlaybackStats from '../hooks/usePlaybackStats.js'
@@ -7,7 +7,7 @@ import usePlaybackStats from '../hooks/usePlaybackStats.js'
 const PlayerContext = createContext(null)
 
 export function PlayerProvider({ children }) {
-  const { user } = useAuth()
+  const user = useSelector((state) => state.users.user)
   const player = useAudioPlayer(undefined, user?.id ?? user?.email)
   const playbackStats = usePlaybackStats(player.audioRef, player.currentSong, user)
   const [playbackError, setPlaybackError] = useState('')

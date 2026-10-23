@@ -1,21 +1,39 @@
+import { useEffect, useRef } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import Layout from './components/Layout.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 import PublicOnlyRoute from './components/PublicOnlyRoute.jsx'
+import AuthLayout from './features/auth/layouts/AuthLayout.jsx'
+import LoginPage from './features/auth/pages/LoginPage.jsx'
+import RegisterPage from './features/auth/pages/RegisterPage.jsx'
+import { fetchCurrentUser } from './features/users/states/action.js'
 import Home from './pages/Home.jsx'
 import Library from './pages/Library.jsx'
-import Login from './pages/Login.jsx'
 import NotFound from './pages/NotFound.jsx'
 import Profile from './pages/Profile.jsx'
-import Register from './pages/Register.jsx'
 import Search from './pages/Search.jsx'
 
 function App() {
+  const dispatch = useDispatch()
+  const { token, isInitializing } = useSelector((state) => state.auth)
+  const requestedProfile = useRef(false)
+
+  useEffect(() => {
+    if (token && isInitializing && !requestedProfile.current) {
+      requestedProfile.current = true
+      dispatch(fetchCurrentUser())
+    }
+    if (!token) requestedProfile.current = false
+  }, [dispatch, token, isInitializing])
+
   return (
     <Routes>
       <Route element={<PublicOnlyRoute />}>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        <Route path="/auth" element={<AuthLayout />}>
+          <Route path="login" element={<LoginPage />} />
+          <Route path="register" element={<RegisterPage />} />
+        </Route>
       </Route>
       <Route element={<ProtectedRoute />}>
         <Route element={<Layout />}>

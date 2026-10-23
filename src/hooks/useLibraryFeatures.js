@@ -14,19 +14,26 @@ function readRecent(key) {
 
 function useLibraryFeatures(user) {
   const { currentSong, isPlaying, songs } = usePlayer()
-  const recentKey = `mini-music-player:recent:${user?.id ?? user?.email ?? 'anonymous'}`
+  const recentKey = user?.id === undefined || user?.id === null
+    ? null
+    : `mini-music-player:recent:${user.id}`
   const [recentState, setRecentState] = useState(() => ({
     key: recentKey,
-    ids: readRecent(recentKey),
+    ids: recentKey ? readRecent(recentKey) : [],
   }))
-  const recentIds = recentState.key === recentKey ? recentState.ids : []
+  const recentIds = recentKey && recentState.key === recentKey
+    ? recentState.ids
+    : []
 
   useEffect(() => {
-    setRecentState({ key: recentKey, ids: readRecent(recentKey) })
+    setRecentState({
+      key: recentKey,
+      ids: recentKey ? readRecent(recentKey) : [],
+    })
   }, [recentKey])
 
   useEffect(() => {
-    if (recentState.key !== recentKey) return
+    if (!recentKey || recentState.key !== recentKey) return
     try {
       window.localStorage.setItem(recentKey, JSON.stringify(recentState.ids))
     } catch (error) {
@@ -35,7 +42,7 @@ function useLibraryFeatures(user) {
   }, [recentKey, recentState])
 
   useEffect(() => {
-    if (!currentSong || !isPlaying) return
+    if (!recentKey || !currentSong || !isPlaying) return
     setRecentState((current) => {
       const ids = current.key === recentKey ? current.ids : readRecent(recentKey)
       return {
