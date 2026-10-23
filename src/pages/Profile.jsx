@@ -40,7 +40,7 @@ function getPhotoUrl(photo) {
   if (/^https?:\/\//i.test(photo)) return photo
 
   try {
-    const apiBase = new URL(import.meta.env.VITE_DELCOM_BASEURL)
+    const apiBase = new URL(DELCOM_BASEURL)
     return new URL(photo.replace(/^\/+/, ''), apiBase.origin).href
   } catch (error) {
     console.error('URL foto profil dari API tidak valid.', error)
@@ -67,11 +67,16 @@ function Profile() {
   const [error, setError] = useState('')
   const [savingProfile, setSavingProfile] = useState(false)
   const [savingPassword, setSavingPassword] = useState(false)
+  const [avatarFailed, setAvatarFailed] = useState(false)
 
   useEffect(() => {
     setName(user?.name ?? '')
     setEmail(user?.email ?? '')
   }, [user?.email, user?.name])
+
+  useEffect(() => {
+    setAvatarFailed(false)
+  }, [user?.photo])
 
   const showError = async (title, cause) => {
     const message = typeof cause === 'string'
@@ -198,10 +203,11 @@ function Profile() {
       )}
 
       <section className="flex flex-wrap items-center gap-5 rounded-2xl border border-slate-800 bg-slate-900 p-6">
-        {user?.photo ? (
+        {user?.photo || !avatarFailed ? (
           <img
-            src={getPhotoUrl(user.photo)}
-            alt={`Foto profil ${user.name}`}
+            src={getPhotoUrl(user?.photo) || '/user.png'}
+            alt={user?.photo ? `Foto profil ${user?.name}` : 'Avatar default'}
+            onError={() => setAvatarFailed(true)}
             className="h-20 w-20 rounded-full object-cover"
           />
         ) : (

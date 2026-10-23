@@ -1,4 +1,4 @@
-const BASE_URL = (import.meta.env.VITE_DELCOM_BASEURL ?? '').replace(/\/+$/, '')
+const BASE_URL = (DELCOM_BASEURL || '').replace(/\/+$/, '')
 const TOKEN_KEY = 'token'
 
 export class ApiError extends Error {
@@ -33,7 +33,7 @@ function getErrorMessage(data, statusText) {
 
 export async function apiFetch(path, options = {}) {
   if (!BASE_URL) {
-    throw new Error('VITE_DELCOM_BASEURL belum dikonfigurasi.')
+    throw new Error('DELCOM_BASEURL belum dikonfigurasi.')
   }
 
   const { headers: suppliedHeaders, body, ...requestOptions } = options

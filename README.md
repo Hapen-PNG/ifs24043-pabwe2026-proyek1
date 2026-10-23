@@ -36,7 +36,7 @@ Konfigurasi API ada di `.env` pada root proyek:
 VITE_DELCOM_BASEURL=https://open-api.delcom.org/api/v1
 ```
 
-`VITE_DELCOM_BASEURL` adalah satu-satunya variabel environment aplikasi. Karena variabel berawalan `VITE_` tersedia pada bundle browser, jangan menyimpan rahasia di dalamnya. `.env` tercantum di `.gitignore`; atur variabel yang sama pada environment deployment. Halaman login dan register bersifat publik; halaman lain memerlukan token API.
+`VITE_DELCOM_BASEURL` adalah satu-satunya variabel environment aplikasi dan dipetakan ke konstanta build `DELCOM_BASEURL`. Karena nilai ini masuk ke bundle browser, jangan menyimpan rahasia di dalamnya. `.env` tercantum di `.gitignore`; atur variabel yang sama pada environment deployment. Halaman login dan register bersifat publik; halaman lain memerlukan token API.
 
 | Akses | Halaman | Path |
 |---|---|---|
@@ -59,7 +59,11 @@ bun run build
 bun run preview
 ```
 
+Build produksi dibuat di `public_html` (diabaikan Git).
+
 File audio dan gambar statis opsional dapat ditempatkan di `public/audio` dan `public/images`. Lagu bawaan didefinisikan di `src/data/songs.js`. Audio yang diunggah pengguna tidak disimpan sebagai file proyek dan perlu diunggah kembali setelah halaman dimuat ulang.
+
+Favicon dan avatar default mengharapkan `public/logo.png` serta `public/user.png`. Kedua file tersebut belum tersedia di checkout ini; tambahkan aset aslinya agar favicon dan avatar default tampil. Jika avatar gagal dimuat, Profil menampilkan inisial nama.
 
 ## Shortcut keyboard
 
@@ -75,9 +79,9 @@ Shortcut tidak aktif saat fokus berada di kontrol formulir, tombol, atau area ya
 2. Masuk ke [Vercel](https://vercel.com/) dan pilih **Add New... → Project**.
 3. Import repository proyek ini.
 4. Pastikan pengaturan framework **Vite** dengan:
-   - Build command: `npm run build`
-   - Output directory: `dist`
-   - Install command: `npm install` (default)
+   - Build command: `bun run build`
+   - Output directory: `public_html`
+   - Install command: `bun install`
 5. Tambahkan `VITE_DELCOM_BASEURL` dengan base URL API yang digunakan saat build, lalu pilih **Deploy**.
 6. Setelah deploy, setiap push ke branch yang terhubung akan memicu deployment baru.
 
@@ -85,21 +89,21 @@ Vercel mendeteksi konfigurasi Vite secara otomatis; tidak diperlukan konfigurasi
 
 ## Deploy ke Netlify
 
-Konfigurasi Netlify tersedia di `netlify.toml`: build menggunakan `npm run build`, hasil diterbitkan dari `dist`, route SPA diarahkan dari `/*` ke `/index.html` dengan status 200, dan aset build mendapat cache immutable. File audio di `/audio/*` diberi header `Accept-Ranges` untuk mendukung permintaan byte-range. Versi Node deploy disetel ke `24.21.0`. File `public/_redirects` dan `public/_headers` menyediakan aturan yang sama di dalam `dist`, termasuk saat deploy dengan drag and drop yang tidak membaca `netlify.toml`.
+Konfigurasi Netlify tersedia di `netlify.toml`: build menggunakan `npm run build`, hasil diterbitkan dari `public_html`, route SPA diarahkan dari `/*` ke `/index.html` dengan status 200, dan aset build mendapat cache immutable. File audio di `/audio/*` diberi header `Accept-Ranges` untuk mendukung permintaan byte-range. Versi Node deploy disetel ke `24.21.0`. File `public/_redirects` dan `public/_headers` disalin ke folder build agar aturan juga tersedia pada deploy drag and drop.
 
 ### Melalui GitHub
 
 1. Push proyek ke repository GitHub.
 2. Masuk ke [Netlify](https://www.netlify.com/) dan pilih **Add new site → Import an existing project**.
 3. Hubungkan GitHub dan pilih repository proyek.
-4. Netlify membaca pengaturan build dan versi Node dari `netlify.toml`. Pastikan build command `npm run build` dan publish directory `dist`, lalu tambahkan `VITE_DELCOM_BASEURL` pada environment variables site.
+4. Netlify membaca pengaturan build dan versi Node dari `netlify.toml`. Pastikan build command `npm run build` dan publish directory `public_html`, lalu tambahkan `VITE_DELCOM_BASEURL` pada environment variables site.
 5. Pilih **Deploy site**. Deployment selanjutnya berjalan otomatis saat perubahan di-push ke branch yang terhubung.
 
-### Drag and drop folder `dist`
+### Drag and drop folder `public_html`
 
-1. Jalankan `npm run build` secara lokal.
+1. Jalankan `bun run build` secara lokal.
 2. Buka halaman [Netlify Drop](https://app.netlify.com/drop).
-3. Seret folder `dist` hasil build ke halaman tersebut.
+3. Seret folder `public_html` hasil build ke halaman tersebut.
 
 Cara ini menerbitkan hasil build yang sudah dibuat. Untuk build ulang otomatis, gunakan deploy melalui repository atau Netlify CLI.
 
@@ -109,7 +113,7 @@ Cara ini menerbitkan hasil build yang sudah dibuat. Untuk build ulang otomatis, 
 bun install
 bun run build
 bunx netlify-cli login
-bunx netlify-cli deploy --prod --dir=dist
+bunx netlify-cli deploy --prod --dir=public_html
 ```
 
-Saat diminta, pilih atau buat site Netlify dan pastikan `VITE_DELCOM_BASEURL` dikonfigurasi sebelum build. Untuk melakukan deploy preview terlebih dahulu, jalankan `bunx netlify-cli deploy --dir=dist`; gunakan URL preview yang ditampilkan untuk memeriksa site, lalu deploy production dengan perintah `--prod`.
+Saat diminta, pilih atau buat site Netlify dan pastikan `VITE_DELCOM_BASEURL` dikonfigurasi sebelum build. Untuk melakukan deploy preview terlebih dahulu, jalankan `bunx netlify-cli deploy --dir=public_html`; gunakan URL preview yang ditampilkan untuk memeriksa site, lalu deploy production dengan perintah `--prod`.
