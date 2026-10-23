@@ -53,3 +53,34 @@ Shortcut tidak aktif saat fokus berada di kontrol formulir, tombol, atau area ya
 6. Setelah deploy, setiap push ke branch yang terhubung akan memicu deployment baru.
 
 Vercel mendeteksi konfigurasi Vite secara otomatis; tidak diperlukan konfigurasi rewrite khusus untuk aplikasi ini.
+
+## Deploy ke Netlify
+
+Konfigurasi Netlify tersedia di `netlify.toml`: build menggunakan `npm run build`, hasil diterbitkan dari `dist`, route SPA diarahkan ke `index.html`, dan aset build mendapat cache immutable. File audio di `/audio/*` diberi header `Accept-Ranges` untuk mendukung permintaan byte-range. Versi Node deploy disetel ke `24.21.0`, sama dengan versi di lingkungan pengembangan proyek ini. File `public/_redirects` dan `public/_headers` menyediakan aturan yang sama di dalam `dist`, termasuk saat deploy dengan drag and drop yang tidak membaca `netlify.toml`.
+
+### Melalui GitHub
+
+1. Push proyek ke repository GitHub.
+2. Masuk ke [Netlify](https://www.netlify.com/) dan pilih **Add new site → Import an existing project**.
+3. Hubungkan GitHub dan pilih repository proyek.
+4. Netlify membaca pengaturan build dan versi Node dari `netlify.toml`. Pastikan build command `npm run build` dan publish directory `dist`.
+5. Pilih **Deploy site**. Deployment selanjutnya berjalan otomatis saat perubahan di-push ke branch yang terhubung.
+
+### Drag and drop folder `dist`
+
+1. Jalankan `npm run build` secara lokal.
+2. Buka halaman [Netlify Drop](https://app.netlify.com/drop).
+3. Seret folder `dist` hasil build ke halaman tersebut.
+
+Cara ini menerbitkan hasil build yang sudah dibuat. Untuk build ulang otomatis, gunakan deploy melalui repository atau Netlify CLI.
+
+### Netlify CLI
+
+```bash
+npm install
+npm run build
+npx netlify-cli login
+npx netlify-cli deploy --prod --dir=dist
+```
+
+Saat diminta, pilih atau buat site Netlify. Untuk melakukan deploy preview terlebih dahulu, jalankan `npx netlify-cli deploy --dir=dist`; gunakan URL preview yang ditampilkan untuk memeriksa site, lalu deploy production dengan perintah `--prod`.
