@@ -2,6 +2,10 @@
 
 Aplikasi pemutar musik berbasis React dan Vite dengan playlist, lirik tersinkron, visualizer frekuensi, dan kontrol pemutaran yang responsif.
 
+Navigasi multi-halaman menggunakan React Router. Halaman player hanya dapat diakses setelah login; autentikasi simulasi berjalan di browser tanpa backend.
+
+Autentikasi hanya untuk simulasi/demo: data pengguna dan sesi disimpan di browser sehingga bukan pengganti autentikasi server untuk aplikasi produksi.
+
 ## Fitur
 
 - Pemutaran playlist dengan kontrol play/pause, lagu berikutnya/sebelumnya, shuffle, dan repeat.
@@ -11,6 +15,11 @@ Aplikasi pemutar musik berbasis React dan Vite dengan playlist, lirik tersinkron
 - Visualizer frekuensi menggunakan Web Audio API.
 - Preferensi volume, lagu terakhir, shuffle, repeat, dan tema disimpan di `localStorage`.
 - Mode gelap dan terang.
+- Halaman Beranda, Pencarian, Koleksi, dan Profil dengan navigasi responsif.
+- Pencarian lagu, artis, dan album dengan autocomplete, filter, pengurutan, dan riwayat per pengguna.
+- Koleksi lagu favorit dan playlist pengguna yang dapat dibuat, diubah, dihapus, dan diputar.
+- Profil pengguna dengan statistik pemutaran, pengaturan akun, dan pengelolaan kata sandi.
+- Login/register simulasi dan akun demo (`demo@musik.com` / `demo123`).
 
 ## Menjalankan secara lokal
 
@@ -22,6 +31,18 @@ npm run dev
 ```
 
 Buka URL lokal yang dicetak Vite di terminal.
+
+Untuk mencoba akun demo, gunakan email `demo@musik.com` dan kata sandi `demo123`. Halaman login dan register bersifat publik; halaman lain memerlukan login.
+
+| Akses | Halaman | Path |
+|---|---|---|
+| Publik | Masuk | `/login` |
+| Publik | Daftar | `/register` |
+| Terproteksi | Beranda | `/` |
+| Terproteksi | Pencarian | `/search` |
+| Terproteksi | Koleksi | `/library` |
+| Terproteksi | Profil | `/profile` |
+| Publik | Tidak ditemukan | Path lain |
 
 Untuk memeriksa build produksi secara lokal:
 

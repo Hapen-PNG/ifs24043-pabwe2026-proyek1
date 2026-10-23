@@ -1,4 +1,5 @@
 import { usePlayer } from '../context/PlayerContext.jsx'
+import CoverArt from './CoverArt.jsx'
 import ProgressBar from './ProgressBar.jsx'
 import Visualizer from './Visualizer.jsx'
 import VolumeControl from './VolumeControl.jsx'
@@ -32,13 +33,10 @@ function Player() {
           Tidak dapat memutar audio: {playbackError}
         </p>
       )}
-      <div className="relative mx-auto mb-8 aspect-square w-full max-w-xs overflow-hidden rounded-3xl bg-gradient-to-br from-violet-500/30 via-slate-800 to-fuchsia-500/20 shadow-2xl shadow-violet-950/30">
-        <img
-          src={currentSong.cover}
-          alt={`Cover album ${currentSong.title}`}
-          className="h-full w-full object-cover"
-        />
-      </div>
+      <CoverArt
+        song={currentSong}
+        className="relative mx-auto mb-8 aspect-square w-full max-w-xs shadow-2xl shadow-violet-950/30"
+      />
 
       <div className="mb-6 overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/50 px-3 py-2">
         <Visualizer />

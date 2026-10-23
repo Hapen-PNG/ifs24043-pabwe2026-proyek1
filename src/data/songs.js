@@ -3,6 +3,7 @@ const songs = [
     id: 1,
     title: "Pagi yang Baru",
     artist: "Nada Senja",
+    album: "Cahaya Pertama",
     src: "/audio/pagi-yang-baru.mp3",
     cover: "/images/pagi-yang-baru.jpg",
     lyrics: [
@@ -20,6 +21,7 @@ const songs = [
     id: 2,
     title: "Di Ujung Kota",
     artist: "Ruang Rindu",
+    album: "Lampu Terakhir",
     src: "/audio/di-ujung-kota.mp3",
     cover: "/images/di-ujung-kota.jpg",
     lyrics: [
@@ -37,6 +39,7 @@ const songs = [
     id: 3,
     title: "Hujan di Beranda",
     artist: "Kertas Biru",
+    album: "Cuaca di Dalam",
     src: "/audio/hujan-di-beranda.mp3",
     cover: "/images/hujan-di-beranda.jpg",
     lyrics: [
@@ -54,6 +57,7 @@ const songs = [
     id: 4,
     title: "Peta Bintang",
     artist: "Orbit Kecil",
+    album: "Langit Kecil",
     src: "/audio/peta-bintang.mp3",
     cover: "/images/peta-bintang.jpg",
     lyrics: [
@@ -71,6 +75,7 @@ const songs = [
     id: 5,
     title: "Rumah di Dalam Diri",
     artist: "Arah Pulang",
+    album: "Tempat Kembali",
     src: "/audio/rumah-di-dalam-diri.mp3",
     cover: "/images/rumah-di-dalam-diri.jpg",
     lyrics: [

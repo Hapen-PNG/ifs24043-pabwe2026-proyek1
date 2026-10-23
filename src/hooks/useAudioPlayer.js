@@ -2,10 +2,14 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import songs from "../data/songs.js"
 
 const STORAGE_KEYS = {
-  currentSongId: "mini-music-player:last-song",
-  volume: "mini-music-player:volume",
-  isShuffle: "mini-music-player:shuffle",
-  repeatMode: "mini-music-player:repeat",
+  currentSongId: "last-song",
+  volume: "volume",
+  isShuffle: "shuffle",
+  repeatMode: "repeat",
+}
+
+function getStorageKey(preference, userId) {
+  return `mini-music-player:${preference}:${userId ?? "anonymous"}`
 }
 
 function readPreference(key, fallback, parse = (value) => value) {
@@ -26,8 +30,11 @@ function savePreference(key, value) {
   }
 }
 
-function getInitialSong(songList) {
-  const savedId = readPreference(STORAGE_KEYS.currentSongId, null)
+function getInitialSong(songList, userId) {
+  const savedId = readPreference(
+    getStorageKey(STORAGE_KEYS.currentSongId, userId),
+    null,
+  )
   return songList.find((song) => String(song.id) === savedId) ?? songList[0] ?? null
 }
 
@@ -45,30 +52,39 @@ function shuffleSongs(songList, currentSong) {
   return currentSong ? [currentSong, ...remaining] : remaining
 }
 
-function useAudioPlayer(songList = songs) {
+function useAudioPlayer(songList = songs, userId) {
+  const [settingsOwner, setSettingsOwner] = useState(userId)
   const audioRef = useRef(null)
   const shuffleQueueRef = useRef([])
   const uploadedUrlsRef = useRef(new Set())
   const [songsState, setSongs] = useState(songList)
-  const [currentSong, setCurrentSong] = useState(() => getInitialSong(songList))
+  const [queue, setQueue] = useState([])
+  const [currentSong, setCurrentSong] = useState(() =>
+    getInitialSong(songList, userId),
+  )
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const [volume, setVolumeState] = useState(() =>
-    readPreference(STORAGE_KEYS.volume, 1, (value) => {
+    readPreference(getStorageKey(STORAGE_KEYS.volume, userId), 1, (value) => {
       const parsed = Number(value)
       return Number.isFinite(parsed) ? Math.max(0, Math.min(parsed, 1)) : 1
     }),
   )
   const [isMuted, setIsMuted] = useState(false)
   const [isShuffle, setIsShuffle] = useState(() =>
-    readPreference(STORAGE_KEYS.isShuffle, "false", (value) => value === "true"),
+    readPreference(
+      getStorageKey(STORAGE_KEYS.isShuffle, userId),
+      "false",
+      (value) => value === "true",
+    ),
   )
   const [repeatMode, setRepeatMode] = useState(() =>
-    readPreference(STORAGE_KEYS.repeatMode, "off", (value) =>
+    readPreference(getStorageKey(STORAGE_KEYS.repeatMode, userId), "off", (value) =>
       ["off", "one", "all"].includes(value) ? value : "off",
     ),
   )
+  const [playbackRate, setPlaybackRateState] = useState(1)
 
   const play = useCallback(() => {
     const audio = audioRef.current
@@ -124,6 +140,7 @@ function useAudioPlayer(songList = songs) {
       id: `upload-${Date.now()}-${Math.random().toString(36).slice(2)}`,
       title: file.name.replace(/\.[^.]+$/, "") || file.name,
       artist: "Unggahan",
+      album: "Unggahan",
       src,
       cover: songsState[0]?.cover ?? "",
       lyrics: [],
@@ -146,9 +163,33 @@ function useAudioPlayer(songList = songs) {
     return song
   }, [isShuffle, songsState])
 
+  const enqueue = useCallback((song) => {
+    if (!song || !songsState.some((item) => item.id === song.id)) return
+    setQueue((current) =>
+      current.some((item) => item.id === song.id)
+        ? current
+        : [...current, song],
+    )
+  }, [songsState])
+
+  const removeFromQueue = useCallback((songId) => {
+    setQueue((current) => current.filter((song) => song.id !== songId))
+  }, [])
+
+  const clearQueue = useCallback(() => {
+    setQueue([])
+  }, [])
+
   const next = useCallback(
     (automatic = false) => {
       if (!currentSong || songsState.length === 0) return
+
+      if (queue.length > 0) {
+        const [queuedSong, ...remainingQueue] = queue
+        setQueue(remainingQueue)
+        selectSong(queuedSong, true, true)
+        return
+      }
 
       if (isShuffle) {
         let queue = shuffleQueueRef.current
@@ -187,7 +228,7 @@ function useAudioPlayer(songList = songs) {
 
       selectSong(songsState[nextIndex % songsState.length])
     },
-    [currentSong, isShuffle, repeatMode, selectSong, songsState],
+    [currentSong, isShuffle, queue, repeatMode, selectSong, songsState],
   )
 
   const prev = useCallback(() => {
@@ -267,6 +308,68 @@ function useAudioPlayer(songList = songs) {
     })
   }, [])
 
+  const setPlaybackRate = useCallback((rate) => {
+    const allowedRates = [0.5, 0.75, 1, 1.25, 1.5, 2]
+    if (!allowedRates.includes(rate)) return
+    setPlaybackRateState(rate)
+    if (audioRef.current) audioRef.current.playbackRate = rate
+  }, [])
+
+  useEffect(() => {
+    if (settingsOwner === userId) return
+    const audio = audioRef.current
+    audio?.pause()
+    uploadedUrlsRef.current.forEach((url) => URL.revokeObjectURL(url))
+    uploadedUrlsRef.current.clear()
+    setSongs(songList)
+    setQueue([])
+    setCurrentSong(getInitialSong(songList, userId))
+    setCurrentTime(0)
+    setDuration(0)
+    setIsPlaying(false)
+    setIsMuted(false)
+    setVolumeState(
+      readPreference(getStorageKey(STORAGE_KEYS.volume, userId), 1, (value) => {
+        const parsed = Number(value)
+        return Number.isFinite(parsed) ? Math.max(0, Math.min(parsed, 1)) : 1
+      }),
+    )
+    setIsShuffle(
+      readPreference(
+        getStorageKey(STORAGE_KEYS.isShuffle, userId),
+        "false",
+        (value) => value === "true",
+      ),
+    )
+    setRepeatMode(
+      readPreference(
+        getStorageKey(STORAGE_KEYS.repeatMode, userId),
+        "off",
+        (value) => ["off", "one", "all"].includes(value) ? value : "off",
+      ),
+    )
+    setPlaybackRateState(1)
+    const nextSong = getInitialSong(songList, userId)
+    if (audio && nextSong) {
+      audio.src = nextSong.src
+      audio.volume = readPreference(
+        getStorageKey(STORAGE_KEYS.volume, userId),
+        1,
+        (value) => {
+          const parsed = Number(value)
+          return Number.isFinite(parsed) ? Math.max(0, Math.min(parsed, 1)) : 1
+        },
+      )
+      audio.muted = false
+      audio.playbackRate = 1
+      audio.load()
+    } else if (audio) {
+      audio.removeAttribute("src")
+      audio.load()
+    }
+    setSettingsOwner(userId)
+  }, [settingsOwner, songList, userId])
+
   useEffect(() => {
     const audio = audioRef.current
     if (!audio) return undefined
@@ -322,24 +425,32 @@ function useAudioPlayer(songList = songs) {
     audio.src = currentSong.src
     audio.volume = volume
     audio.muted = isMuted
+    audio.playbackRate = playbackRate
     audio.load()
   }, [])
 
   useEffect(() => {
-    savePreference(STORAGE_KEYS.currentSongId, currentSong?.id ?? "")
-  }, [currentSong])
+    if (!userId || settingsOwner !== userId) return
+    savePreference(
+      getStorageKey(STORAGE_KEYS.currentSongId, userId),
+      currentSong?.id ?? "",
+    )
+  }, [currentSong, settingsOwner, userId])
 
   useEffect(() => {
-    savePreference(STORAGE_KEYS.volume, volume)
-  }, [volume])
+    if (!userId || settingsOwner !== userId) return
+    savePreference(getStorageKey(STORAGE_KEYS.volume, userId), volume)
+  }, [settingsOwner, userId, volume])
 
   useEffect(() => {
-    savePreference(STORAGE_KEYS.isShuffle, isShuffle)
-  }, [isShuffle])
+    if (!userId || settingsOwner !== userId) return
+    savePreference(getStorageKey(STORAGE_KEYS.isShuffle, userId), isShuffle)
+  }, [isShuffle, settingsOwner, userId])
 
   useEffect(() => {
-    savePreference(STORAGE_KEYS.repeatMode, repeatMode)
-  }, [repeatMode])
+    if (!userId || settingsOwner !== userId) return
+    savePreference(getStorageKey(STORAGE_KEYS.repeatMode, userId), repeatMode)
+  }, [repeatMode, settingsOwner, userId])
 
   useEffect(
     () => () => {
@@ -351,6 +462,7 @@ function useAudioPlayer(songList = songs) {
   return {
     audioRef,
     songs: songsState,
+    queue,
     currentSong,
     isPlaying,
     currentTime,
@@ -359,6 +471,7 @@ function useAudioPlayer(songList = songs) {
     isMuted,
     isShuffle,
     repeatMode,
+    playbackRate,
     play,
     pause,
     toggle,
@@ -369,8 +482,12 @@ function useAudioPlayer(songList = songs) {
     toggleMute,
     toggleShuffle,
     cycleRepeat,
+    setPlaybackRate,
     selectSong,
     addSong,
+    enqueue,
+    removeFromQueue,
+    clearQueue,
   }
 }
 
