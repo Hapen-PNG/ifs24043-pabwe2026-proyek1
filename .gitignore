@@ -1,6 +1,14 @@
 # Custom
 .env
 public_html
+*.db
+backend/data
 
 node_modules
 dist
+dist-ssr
+*.local
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store

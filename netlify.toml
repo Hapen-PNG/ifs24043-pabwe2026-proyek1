@@ -1,21 +1,9 @@
 [build]
-  command = "npm run build"
+  base = "frontend"
   publish = "public_html"
-
-[build.environment]
-  NODE_VERSION = "24.21.0"
+  command = "bun run build"
 
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-
-[[headers]]
-  for = "/assets/*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-  for = "/audio/*"
-  [headers.values]
-    Accept-Ranges = "bytes"
