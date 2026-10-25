@@ -56,8 +56,21 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
+    test: {
+      environment: "jsdom",
+      globals: true,
+      setupFiles: "./src/test/setup.js",
+      coverage: {
+        provider: "v8",
+        reporter: ["text", "lcov"],
+        include: ["src/**/*.{js,jsx}"],
+        exclude: ["src/main.jsx", "src/test/**"],
+      },
+    },
     define: {
-      DELCOM_BASEURL: JSON.stringify(env.VITE_DELCOM_BASEURL || ""),
+      DELCOM_BASEURL: JSON.stringify(
+        env.VITE_DELCOM_BASEURL || (mode === "test" ? "http://api.test" : ""),
+      ),
       API_BASEURL: JSON.stringify(env.VITE_API_BASEURL || ""),
     },
   };

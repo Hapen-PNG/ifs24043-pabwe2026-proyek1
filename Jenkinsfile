@@ -36,21 +36,17 @@ pipeline {
         stage('Install Dependencies') {
             agent {
                 docker {
-                    image 'oven/bun:alpine'
+                    image 'node:24-alpine'
                     reuseNode true
                 }
             }
 
             steps {
-                sh '''
-                    set -e
-
-                    echo "=== Installing Dependencies ==="
-
-                    bun install
-
-                    echo "=== Dependencies Installed ==="
-                '''
+                echo "=== Installing Dependencies ==="
+                dir('frontend') {
+                    sh 'npm ci'
+                }
+                echo "=== Dependencies Installed ==="
             }
         }
 
@@ -66,21 +62,11 @@ pipeline {
             }
 
             steps {
-                sh '''
-                    set -e
-
-                    echo "=== Running Tests with Coverage ==="
-
-                    if [ -f angular.json ]; then
-                        echo "Framework: Angular"
-                        npx ng test --coverage
-                    else
-                        echo "Framework: React, Next.js, Vue, Nuxt, Svelte, or SvelteKit"
-                        npx vitest run --coverage
-                    fi
-
-                    echo "=== Tests Passed ==="
-                '''
+                echo "=== Running Tests with Coverage ==="
+                dir('frontend') {
+                    sh 'npm run test:coverage'
+                }
+                echo "=== Tests Passed ==="
             }
         }
 
