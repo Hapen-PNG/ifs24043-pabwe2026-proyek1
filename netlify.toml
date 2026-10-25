@@ -1,5 +1,4 @@
 [build]
-  base = "frontend"
   publish = "public_html"
   command = "bun run build"
 
