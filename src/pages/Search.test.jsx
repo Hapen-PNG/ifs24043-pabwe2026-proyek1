@@ -61,25 +61,36 @@ function enterQuery(input, value) {
 }
 
 describe('Search', () => {
+  const selectSong = vi.fn()
+  const enqueue = vi.fn()
+  const toggleFavorite = vi.fn()
+  const addSearch = vi.fn()
+  const removeSearch = vi.fn()
+  const clearHistory = vi.fn()
+
   beforeEach(() => {
     vi.useFakeTimers()
     usePlayer.mockReturnValue({
       songs,
-      selectSong: vi.fn(),
-      enqueue: vi.fn(),
+      selectSong,
+      enqueue,
     })
     useLibrary.mockReturnValue({
       favoriteIds: [],
-      toggleFavorite: vi.fn(),
+      toggleFavorite,
     })
     useSearchHistory.mockReturnValue({
       history: [],
       loading: false,
       unavailable: false,
-      addSearch: vi.fn(),
-      removeSearch: vi.fn(),
-      clearHistory: vi.fn(),
+      addSearch,
+      removeSearch,
+      clearHistory,
     })
+  })
+
+  beforeEach(() => {
+    vi.clearAllMocks()
   })
 
   afterEach(() => {
@@ -127,6 +138,9 @@ describe('Search', () => {
     const albumResults = within(screen.getByRole('region', { name: 'Album' }))
     expect(albumResults.getByRole('button', { name: 'Blue Horizon' })).toBeInTheDocument()
     expect(screen.queryByRole('region', { name: 'Lagu' })).not.toBeInTheDocument()
+    fireEvent.click(albumResults.getByRole('button', { name: 'Blue Horizon' }))
+    expect(addSearch).toHaveBeenCalledWith('Blue Horizon')
+    expect(screen.getByRole('region', { name: 'Lagu' })).toBeInTheDocument()
   })
 
   it('shows the empty state when no results match the search', () => {
@@ -136,5 +150,121 @@ describe('Search', () => {
     enterQuery(input, 'Tidak ada kecocokan')
 
     expect(screen.getByRole('heading', { name: 'Belum ada hasil' })).toBeInTheDocument()
+  })
+
+  it('supports autocomplete keyboard navigation, selection, Escape, and clearing the query', () => {
+    renderSearch()
+    const input = screen.getByRole('combobox', { name: 'Cari lagu atau artis' })
+    fireEvent.change(input, { target: { value: 'Luna' } })
+
+    expect(screen.getByRole('listbox', { name: 'Saran pencarian' })).toBeInTheDocument()
+    fireEvent.keyDown(input, { key: 'ArrowDown' })
+    expect(input).toHaveAttribute('aria-activedescendant', 'search-suggestion-0')
+    fireEvent.keyDown(input, { key: 'ArrowUp' })
+    expect(input).toHaveAttribute('aria-activedescendant', 'search-suggestion-0')
+    fireEvent.keyDown(input, { key: 'Escape' })
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+
+    fireEvent.change(input, { target: { value: 'Starlight' } })
+    const suggestion = screen.getByRole('option', { name: /Starlight/ })
+    fireEvent.mouseDown(suggestion)
+    fireEvent.click(suggestion)
+    expect(addSearch).toHaveBeenCalledWith('Starlight')
+    expect(screen.getByRole('region', { name: 'Lagu' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Hapus teks pencarian' }))
+    expect(input).toHaveValue('')
+    expect(screen.getByRole('heading', { name: 'Populer' })).toBeInTheDocument()
+  })
+
+  it('renders song actions, artist selection, and artist sorting', () => {
+    renderSearch()
+    const input = screen.getByRole('combobox', { name: 'Cari lagu atau artis' })
+    enterQuery(input, 'i')
+
+    const songResults = within(screen.getByRole('region', { name: 'Lagu' }))
+    expect(songResults.getAllByRole('button').map((button) => button.textContent).join(' '))
+      .toContain('River Song')
+    fireEvent.click(songResults.getByRole('button', { name: /^Starlight/ }))
+    fireEvent.click(songResults.getByRole('button', { name: 'Tambahkan River Song ke antrean' }))
+    fireEvent.click(songResults.getByRole('button', { name: 'Tambahkan ke lagu favorit: River Song' }))
+    expect(selectSong).toHaveBeenCalledWith(songs[0])
+    expect(enqueue).toHaveBeenCalledWith(songs[1])
+    expect(toggleFavorite).toHaveBeenCalledWith(2)
+
+    fireEvent.change(screen.getByLabelText('Urutkan'), { target: { value: 'artist' } })
+    const sortedButtons = within(screen.getByRole('region', { name: 'Lagu' })).getAllByRole('button')
+    expect(sortedButtons[0]).toHaveAccessibleName(/^Starlight/)
+
+    enterQuery(input, 'Luna')
+    fireEvent.click(screen.getByRole('button', { name: 'Artis' }))
+    fireEvent.click(screen.getByRole('button', { name: /Luna Vale/ }))
+    expect(addSearch).toHaveBeenCalledWith('Luna Vale')
+    expect(screen.getByRole('region', { name: 'Lagu' })).toBeInTheDocument()
+  })
+
+  it('shows and manages search history loading, unavailable, and populated states', () => {
+    useSearchHistory.mockReturnValue({
+      history: ['Lagu Lama'],
+      loading: true,
+      unavailable: false,
+      addSearch,
+      removeSearch,
+      clearHistory,
+    })
+    renderSearch()
+
+    expect(screen.getByRole('status', { name: 'Memuat riwayat pencarian' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Hapus semua' }))
+    expect(clearHistory).toHaveBeenCalledOnce()
+
+    useSearchHistory.mockReturnValue({
+      history: ['Lagu Lama'],
+      loading: false,
+      unavailable: false,
+      addSearch,
+      removeSearch,
+      clearHistory,
+    })
+    cleanup()
+    renderSearch()
+    fireEvent.click(screen.getByRole('button', { name: 'Hapus pencarian Lagu Lama dari riwayat' }))
+    expect(removeSearch).toHaveBeenCalledWith('Lagu Lama')
+    fireEvent.click(screen.getByRole('button', { name: 'Lagu Lama' }))
+    expect(addSearch).toHaveBeenCalledWith('Lagu Lama')
+    expect(screen.getByRole('heading', { name: 'Belum ada hasil' })).toBeInTheDocument()
+
+    useSearchHistory.mockReturnValue({
+      history: [],
+      loading: false,
+      unavailable: true,
+      addSearch,
+      removeSearch,
+      clearHistory,
+    })
+    cleanup()
+    renderSearch()
+    expect(screen.getByText('Data belum dapat dimuat')).toBeInTheDocument()
+  })
+
+  it('selects popular searches and closes autocomplete after blur', () => {
+    renderSearch()
+    fireEvent.click(screen.getByRole('button', { name: /Pagi yang Baru/ }))
+    expect(addSearch).toHaveBeenCalledWith('Pagi yang Baru')
+
+    const input = screen.getByRole('combobox', { name: 'Cari lagu atau artis' })
+    fireEvent.change(input, { target: { value: 'Blue' } })
+    expect(screen.getByRole('listbox')).toBeInTheDocument()
+    fireEvent.blur(input)
+    fireEvent.focus(input)
+    act(() => {
+      vi.advanceTimersByTime(100)
+    })
+    expect(screen.getByRole('listbox')).toBeInTheDocument()
+    fireEvent.blur(input)
+    act(() => {
+      vi.advanceTimersByTime(100)
+    })
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
   })
 })

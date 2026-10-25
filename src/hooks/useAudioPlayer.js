@@ -72,7 +72,7 @@ function useAudioPlayer(songList = songs, userId) {
   const [isShuffle, setIsShuffle] = useState(() =>
     readPreference(
       getStorageKey(STORAGE_KEYS.isShuffle, userId),
-      "false",
+      false,
       (value) => value === "true",
     ),
   )

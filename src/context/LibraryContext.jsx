@@ -108,6 +108,8 @@ export function LibraryProvider({ children }) {
 
   const addSongToPlaylist = useCallback((playlistId, songId) => {
     if (!songs.some((song) => song.id === songId)) return Promise.resolve()
+    const playlist = library.playlists.find((item) => item.id === playlistId)
+    if ((playlist?.songs ?? []).some((song) => song.id === songId)) return Promise.resolve()
     return performOptimistic(
       (snapshot) => ({
         ...snapshot,

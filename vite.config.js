@@ -65,13 +65,21 @@ export default defineConfig(({ mode }) => {
         reporter: ["text", "lcov"],
         include: ["src/**/*.{js,jsx}"],
         exclude: ["src/main.jsx", "src/test/**"],
+        thresholds: {
+          statements: 95,
+          branches: 88,
+          functions: 94,
+          lines: 96,
+        },
       },
     },
     define: {
       DELCOM_BASEURL: JSON.stringify(
         env.VITE_DELCOM_BASEURL || (mode === "test" ? "http://api.test" : ""),
       ),
-      API_BASEURL: JSON.stringify(env.VITE_API_BASEURL || ""),
+      API_BASEURL: JSON.stringify(
+        env.VITE_API_BASEURL || (mode === "test" ? "http://api.test" : ""),
+      ),
     },
   };
 });

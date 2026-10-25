@@ -6,11 +6,28 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import activityReducer from '../features/activity/states/reducer.js'
 import useSearchHistory from './useSearchHistory.js'
 
-const { apiHistory } = vi.hoisted(() => ({ apiHistory: [] }))
+const { apiHistory, requests } = vi.hoisted(() => ({
+  apiHistory: [],
+  requests: {
+    fetch: vi.fn(),
+    add: vi.fn(),
+    remove: vi.fn(),
+    clear: vi.fn(),
+  },
+}))
 
 vi.mock('../features/activity/api/activityApi.js', () => ({
-  getSearchHistoryApi: vi.fn(async () => [...apiHistory]),
-  addSearchApi: vi.fn(async (term) => {
+  getSearchHistoryApi: requests.fetch,
+  addSearchApi: requests.add,
+  removeSearchApi: requests.remove,
+  clearSearchApi: requests.clear,
+  getRecentApi: vi.fn(),
+  addRecentApi: vi.fn(),
+  getStatsApi: vi.fn(),
+  recordPlayApi: vi.fn(),
+}))
+
+function addToApiHistory(term) {
     const existing = apiHistory.find(
       (entry) => entry.term.toLocaleLowerCase() === term.toLocaleLowerCase(),
     )
@@ -23,19 +40,12 @@ vi.mock('../features/activity/api/activityApi.js', () => ({
       apiHistory.splice(8)
     }
     return [...apiHistory]
-  }),
-  removeSearchApi: vi.fn(async (id) => {
+}
+
+function removeFromApiHistory(id) {
     const index = apiHistory.findIndex((entry) => entry.id === id)
     if (index >= 0) apiHistory.splice(index, 1)
-  }),
-  clearSearchApi: vi.fn(async () => {
-    apiHistory.splice(0)
-  }),
-  getRecentApi: vi.fn(),
-  addRecentApi: vi.fn(),
-  getStatsApi: vi.fn(),
-  recordPlayApi: vi.fn(),
-}))
+}
 
 function createStore() {
   return configureStore({
@@ -59,6 +69,11 @@ describe('useSearchHistory', () => {
   beforeEach(() => {
     apiHistory.splice(0)
     localStorage.clear()
+    vi.clearAllMocks()
+    requests.fetch.mockImplementation(async () => [...apiHistory])
+    requests.add.mockImplementation(async (term) => addToApiHistory(term))
+    requests.remove.mockImplementation(async (id) => removeFromApiHistory(id))
+    requests.clear.mockImplementation(async () => apiHistory.splice(0))
   })
 
   it('adds a search term to history', async () => {
@@ -120,5 +135,58 @@ describe('useSearchHistory', () => {
     })
 
     expect(result.current.history).toEqual([])
+  })
+
+  it('ignores blank terms, unknown entries, and operations for anonymous users', async () => {
+    const store = createStore()
+    const { result } = renderHook(() => useSearchHistory(null), {
+      wrapper: withStore(store),
+    })
+
+    await act(async () => {
+      await result.current.addSearch('  ')
+      await result.current.addSearch('Term')
+      await result.current.removeSearch('missing')
+      await result.current.clearHistory()
+    })
+
+    expect(requests.fetch).not.toHaveBeenCalled()
+    expect(requests.add).not.toHaveBeenCalled()
+    expect(requests.remove).not.toHaveBeenCalled()
+    expect(requests.clear).not.toHaveBeenCalled()
+  })
+
+  it('removes a selected search term', async () => {
+    apiHistory.push(...makeHistory(['A', 'B']))
+    const store = createStore()
+    const { result } = renderHook(() => useSearchHistory(1), {
+      wrapper: withStore(store),
+    })
+    await waitFor(() => expect(result.current.history).toEqual(['A', 'B']))
+
+    await act(async () => result.current.removeSearch('A'))
+    expect(result.current.history).toEqual(['B'])
+    expect(requests.remove).toHaveBeenCalledWith('seed-0')
+  })
+
+  it('restores previous state when add, remove, or clear fails', async () => {
+    apiHistory.push(...makeHistory(['Seed']))
+    const store = createStore()
+    const { result } = renderHook(() => useSearchHistory(1), {
+      wrapper: withStore(store),
+    })
+    await waitFor(() => expect(result.current.history).toEqual(['Seed']))
+
+    requests.add.mockRejectedValueOnce(new Error('add failed'))
+    await act(async () => result.current.addSearch('New'))
+    expect(result.current.history).toEqual(['Seed'])
+
+    requests.remove.mockRejectedValueOnce(new Error('remove failed'))
+    await act(async () => result.current.removeSearch('Seed'))
+    expect(result.current.history).toEqual(['Seed'])
+
+    requests.clear.mockRejectedValueOnce(new Error('clear failed'))
+    await act(async () => result.current.clearHistory())
+    expect(result.current.history).toEqual(['Seed'])
   })
 })
