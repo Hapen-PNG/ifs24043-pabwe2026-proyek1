@@ -125,7 +125,7 @@ describe('Search', () => {
     enterQuery(input, 'Blue')
     fireEvent.click(screen.getByRole('button', { name: 'Album' }))
     const albumResults = within(screen.getByRole('region', { name: 'Album' }))
-    expect(albumResults.getByText('Blue Horizon')).toBeInTheDocument()
+    expect(albumResults.getByRole('button', { name: 'Blue Horizon' })).toBeInTheDocument()
     expect(screen.queryByRole('region', { name: 'Lagu' })).not.toBeInTheDocument()
   })
 
