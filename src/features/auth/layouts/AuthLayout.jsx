@@ -22,11 +22,11 @@ function AuthLayout() {
         aria-label="Konten autentikasi"
         className="auth-critical-main flex min-h-[calc(100vh-4.5rem)] items-center justify-center px-4 py-8"
       >
-        <section className="auth-critical-card w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl shadow-black/20 sm:p-8">
+        <section className="auth-critical-card min-h-[36rem] w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl shadow-black/20 sm:p-8">
           <h1 className="mt-6 text-3xl font-bold">{pageTitle}</h1>
           <Suspense
             fallback={
-              <div role="status" aria-live="polite" className="mt-4 text-sm text-slate-200">
+              <div role="status" aria-live="polite" className="mt-2 text-sm leading-5 text-slate-400">
                 Memuat halaman…
               </div>
             }
