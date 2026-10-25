@@ -7,10 +7,10 @@ function PublicOnlyRoute() {
     return (
       <main
         className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-200"
-        role="status"
-        aria-live="polite"
       >
-        Memuat sesi pengguna...
+        <h1 aria-live="polite" className="text-sm font-normal">
+          Memuat sesi pengguna...
+        </h1>
       </main>
     )
   }

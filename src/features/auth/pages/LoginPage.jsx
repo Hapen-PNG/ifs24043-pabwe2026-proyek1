@@ -39,7 +39,6 @@ function LoginPage() {
 
   return (
     <>
-      <h1 className="mt-6 text-3xl font-bold">Selamat datang kembali</h1>
       <p className="mt-2 text-sm text-slate-400">Masuk untuk melanjutkan musikmu.</p>
       <form onSubmit={handleSubmit} className="mt-6 space-y-5">
         <div>

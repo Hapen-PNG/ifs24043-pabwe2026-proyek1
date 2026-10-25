@@ -2,12 +2,12 @@ import { lazy, Suspense, useEffect, useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { fetchCurrentUser } from './features/users/states/action.js'
+import PublicOnlyRoute from './components/PublicOnlyRoute.jsx'
+import AuthLayout from './features/auth/layouts/AuthLayout.jsx'
 
 const Layout = lazy(() => import('./components/Layout.jsx'))
 const ProtectedRoute = lazy(() => import('./components/ProtectedRoute.jsx'))
-const PublicOnlyRoute = lazy(() => import('./components/PublicOnlyRoute.jsx'))
 const ProtectedApp = lazy(() => import('./components/ProtectedApp.jsx'))
-const AuthLayout = lazy(() => import('./features/auth/layouts/AuthLayout.jsx'))
 const LoginPage = lazy(() => import('./features/auth/pages/LoginPage.jsx'))
 const RegisterPage = lazy(() => import('./features/auth/pages/RegisterPage.jsx'))
 const Home = lazy(() => import('./pages/Home.jsx'))
@@ -46,13 +46,13 @@ function App() {
   return (
     <Suspense
       fallback={
-        <main
+        <div
           role="status"
           aria-live="polite"
           className="min-h-screen bg-slate-950 p-6 text-sm text-slate-200"
         >
           Memuat halaman…
-        </main>
+        </div>
       }
     >
       <Routes>

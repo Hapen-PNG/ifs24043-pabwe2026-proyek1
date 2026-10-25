@@ -40,7 +40,6 @@ function RegisterPage() {
 
   return (
     <>
-      <h1 className="mt-6 text-3xl font-bold">Buat akun</h1>
       <p className="mt-2 text-sm text-slate-400">Daftar untuk menyimpan pengalaman musikmu.</p>
       <form onSubmit={handleSubmit} className="mt-7 space-y-5">
         <div>
