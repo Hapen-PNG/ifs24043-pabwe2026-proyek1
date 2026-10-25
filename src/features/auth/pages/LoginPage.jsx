@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import Swal from 'sweetalert2'
 import { useDispatch, useSelector } from 'react-redux'
 import { login } from '../states/action.js'
+import loadSweetAlert from '../../../helpers/loadSweetAlert.js'
 
 function LoginPage() {
   const dispatch = useDispatch()
@@ -17,6 +17,7 @@ function LoginPage() {
     try {
       await dispatch(login({ email, password })).unwrap()
       navigate('/', { replace: true })
+      const Swal = await loadSweetAlert()
       void Swal.fire({
         toast: true,
         position: 'top-end',
@@ -27,6 +28,7 @@ function LoginPage() {
         showConfirmButton: false,
       })
     } catch (error) {
+      const Swal = await loadSweetAlert()
       void Swal.fire({
         icon: 'error',
         title: 'Gagal masuk',

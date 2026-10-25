@@ -2,7 +2,7 @@ import { Link, Outlet } from 'react-router-dom'
 
 function AuthLayout() {
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
+    <div className="auth-critical-shell min-h-screen bg-slate-950 text-white">
       <header className="px-4 py-6">
         <nav aria-label="Navigasi autentikasi" className="mx-auto max-w-md">
           <Link
@@ -16,9 +16,9 @@ function AuthLayout() {
       <main
         id="main-content"
         aria-label="Konten autentikasi"
-        className="flex min-h-[calc(100vh-4.5rem)] items-center justify-center px-4 py-8"
+        className="auth-critical-main flex min-h-[calc(100vh-4.5rem)] items-center justify-center px-4 py-8"
       >
-        <section className="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl shadow-black/20 sm:p-8">
+        <section className="auth-critical-card w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl shadow-black/20 sm:p-8">
           <Outlet />
         </section>
       </main>

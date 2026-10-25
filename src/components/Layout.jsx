@@ -1,11 +1,11 @@
 import { useEffect, useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import Swal from 'sweetalert2'
 import { logout } from '../features/auth/states/action.js'
 import { usePlayer } from '../context/PlayerContext.jsx'
 import { useTheme } from '../context/ThemeContext.jsx'
 import MiniPlayer from './MiniPlayer.jsx'
+import loadSweetAlert from '../helpers/loadSweetAlert.js'
 
 const links = [
   { to: '/', label: 'Beranda', end: true, icon: '⌂' },
@@ -67,6 +67,7 @@ function Layout() {
   const handleLogout = async () => {
     try {
       await dispatch(logout()).unwrap()
+      const Swal = await loadSweetAlert()
       await Swal.fire({
         icon: 'success',
         title: 'Berhasil keluar',
@@ -75,6 +76,7 @@ function Layout() {
       })
       navigate('/auth/login', { replace: true })
     } catch (error) {
+      const Swal = await loadSweetAlert()
       await Swal.fire({
         icon: 'error',
         title: 'Sesi diakhiri',

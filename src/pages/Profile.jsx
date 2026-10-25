@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import Swal from 'sweetalert2'
 import {
   changePassword as changePasswordAction,
   logout as logoutAction,
@@ -15,6 +14,7 @@ import { clearLegacyData } from '../helpers/legacyData.js'
 import { useLibrary } from '../context/LibraryContext.jsx'
 import { usePlayer } from '../context/PlayerContext.jsx'
 import { useTheme } from '../context/ThemeContext.jsx'
+import loadSweetAlert from '../helpers/loadSweetAlert.js'
 
 function getInitials(name = '') {
   return name
@@ -93,6 +93,7 @@ function Profile() {
       ? cause
       : cause?.message ?? 'Permintaan gagal. Silakan coba lagi.'
     setError(message)
+    const Swal = await loadSweetAlert()
     await Swal.fire({ icon: 'error', title, text: message })
   }
 
@@ -104,6 +105,7 @@ function Profile() {
     try {
       await dispatch(updateCurrentUser({ name, email })).unwrap()
       setMessage('Profil berhasil diperbarui.')
+      const Swal = await loadSweetAlert()
       await Swal.fire({ icon: 'success', title: 'Profil berhasil diperbarui' })
     } catch (cause) {
       await showError('Profil gagal diperbarui', cause)
@@ -120,6 +122,7 @@ function Profile() {
     try {
       await dispatch(updateCurrentUserPhoto(photo)).unwrap()
       setMessage('Foto profil berhasil diperbarui.')
+      const Swal = await loadSweetAlert()
       await Swal.fire({ icon: 'success', title: 'Foto profil berhasil diperbarui' })
     } catch (cause) {
       await showError('Foto profil gagal diperbarui', cause)
@@ -143,6 +146,7 @@ function Profile() {
       setNewPassword('')
       setConfirmPassword('')
       setMessage('Kata sandi berhasil diganti.')
+      const Swal = await loadSweetAlert()
       await Swal.fire({ icon: 'success', title: 'Kata sandi berhasil diganti' })
     } catch (cause) {
       await showError('Kata sandi gagal diganti', cause)
@@ -167,6 +171,7 @@ function Profile() {
   const handleLogout = async () => {
     try {
       await dispatch(logoutAction()).unwrap()
+      const Swal = await loadSweetAlert()
       await Swal.fire({
         icon: 'success',
         title: 'Berhasil keluar',

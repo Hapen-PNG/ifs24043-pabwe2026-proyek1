@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import Swal from 'sweetalert2'
 import { useDispatch, useSelector } from 'react-redux'
 import { register } from '../states/action.js'
+import loadSweetAlert from '../../../helpers/loadSweetAlert.js'
 
 function RegisterPage() {
   const dispatch = useDispatch()
@@ -18,6 +18,7 @@ function RegisterPage() {
     try {
       await dispatch(register({ name, email, password })).unwrap()
       navigate('/auth/login', { replace: true })
+      const Swal = await loadSweetAlert()
       void Swal.fire({
         toast: true,
         position: 'top-end',
@@ -28,6 +29,7 @@ function RegisterPage() {
         showConfirmButton: false,
       })
     } catch (error) {
+      const Swal = await loadSweetAlert()
       void Swal.fire({
         icon: 'error',
         title: 'Pendaftaran gagal',
