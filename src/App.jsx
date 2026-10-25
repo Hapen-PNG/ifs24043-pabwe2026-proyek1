@@ -3,10 +3,10 @@ import { useDispatch, useSelector } from 'react-redux'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { fetchCurrentUser } from './features/users/states/action.js'
 import PublicOnlyRoute from './components/PublicOnlyRoute.jsx'
+import ProtectedRoute from './components/ProtectedRoute.jsx'
 import AuthLayout from './features/auth/layouts/AuthLayout.jsx'
 
 const Layout = lazy(() => import('./components/Layout.jsx'))
-const ProtectedRoute = lazy(() => import('./components/ProtectedRoute.jsx'))
 const ProtectedApp = lazy(() => import('./components/ProtectedApp.jsx'))
 const LoginPage = lazy(() => import('./features/auth/pages/LoginPage.jsx'))
 const RegisterPage = lazy(() => import('./features/auth/pages/RegisterPage.jsx'))
