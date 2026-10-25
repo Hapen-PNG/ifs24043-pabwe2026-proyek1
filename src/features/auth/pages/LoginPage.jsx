@@ -41,9 +41,9 @@ function LoginPage() {
       <p className="mt-2 text-sm text-slate-400">Masuk untuk melanjutkan musikmu.</p>
       <form onSubmit={handleSubmit} className="mt-6 space-y-5">
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-slate-200">Email</label>
+          <label htmlFor="username" className="block text-sm font-medium text-slate-200">Email</label>
           <input
-            id="email"
+            id="username"
             type="email"
             name="email"
             autoComplete="email"
@@ -67,6 +67,7 @@ function LoginPage() {
           />
         </div>
         <button
+          id="btn-submit"
           type="submit"
           disabled={loading}
           className="w-full rounded-xl bg-violet-400 px-4 py-3 font-semibold text-slate-950 transition-colors hover:bg-violet-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-wait disabled:opacity-60"
